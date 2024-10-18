@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - PdfTex</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #17252A;
+            background-color: #FEFFFF;
+            margin: 0;
+            padding: 0;
+        }
+        .logo {
+            transition: transform 0.3s, color 0.3s;
+            display: inline-block;
+        }
+
+        .logo:hover {
+            transform: scale(1.1);
+            color: #FA0F00; /* Change the color on hover */
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #topbar {
+            background-color: #FEFFFF;
+            display: flex;
+            align-items: center;
+            height: 65px;
+            padding: 0 30px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 8px 20px rgba(226,226,226,.6);
+        }
+        .title a {
+            display: inline-flex;
+            align-items: center;
+            font-size: 28px;
+            color: #17252A;
+            text-decoration: none;
+        }
+        .title .logo {
+            font-size: 38px;
+            margin-right: 10px;
+        }
+        .title .logo {
+            font-size: 38px;
+            margin-right: 10px;
+        }
+        .navbar {
+            margin-left: 30px;
+        }
+        .navbar .selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 15px;
+            color: #17252A;
+            cursor: pointer;
+        }
+        .nav-links {
+            margin-left: 20px;
+            display: flex;
+            gap: 40px;
+        }
+        .nav-links a {
+            color: #17252A;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #FA0F00;
+        }
+        .corner {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        .corner .action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            color: #666;
+            box-sizing: border-box;
+            height: 32px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .corner .action.donate {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+        }
+        .corner .action:hover {
+            transform: scale(1.1);
+        }
+        .hero {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+            text-align: center;
+            padding: 60px 0;
+        }
+        .hero h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        .hero p {
+            font-size: 1.2em;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .content {
+            padding: 40px 0;
+        }
+        .card {
+            background-color: #FEFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card h2 {
+            color: #FA0F00;
+            margin-top: 0;
+        }
+        .team-member {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .team-member img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+        .team-member-info h3 {
+            margin: 0;
+            color: #17252A;
+        }
+        .team-member-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="topbar">
+        <div class="title">
+            <a href="/" title="PDFTEX — PDF to LaTeX Converter">
+                <img src="https://i.ibb.co/9hXPfWv/logo.png"  class="logo" style="height: 50px; margin-right: 20px;">            </a>
+        </div>
+
+        <div class="navbar">
+            <div class="selected" data-dropdown="navbar__tools">
+                <div class="name">Tools</div>
+                <div class="arrow">▼</div>
+            </div>
+
+            <div id="navbar__tools" class="menu">
+                <ul>
+                    <li><a href="/">Convert PDF to LaTeX</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="about.html">About Us</a>
+            <a href="contact.html">Contact Us</a>
+        </div>
+        <div class="corner">
+            <a href="/donate.html" class="action donate">
+                <span>Donate</span>
+            </a>
+        </div>
+    </div>
+    <style>
+        /* Header-related styles */
+        #topbar {
+            background-color: #FEFFFF;
+            display: flex;
+            align-items: center;
+            height: 65px;
+            padding: 0 30px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 8px 20px rgba(226,226,226,.6);
+        }
+        .title a {
+            display: inline-flex;
+            align-items: center;
+            font-size: 28px;
+            color: #17252A;
+            text-decoration: none;
+        }
+        .title .logo {
+            font-size: 38px;
+            margin-right: 10px;
+        }
+        .navbar {
+            margin-left: 30px;
+            position: relative;
+        }
+        .navbar .selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 15px;
+            color: #17252A;
+            cursor: pointer;
+        }
+        .navbar .menu {
+            position: absolute;
+            background-color: #FEFFFF;
+            display: none;
+            overflow: auto;
+            box-shadow: 0 8px 10px rgba(226,226,226,.6);
+            border-radius: 0 0 4px 4px;
+        }
+        .corner {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        .corner .action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            color: #666;
+            box-sizing: border-box;
+            height: 32px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .corner .action.donate {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+        }
+        .corner .action:hover {
+            transform: scale(1.1);
+        }
+        .nav-links {
+            margin-left: 20px;
+            display: flex;
+            gap: 40px;
+        }
+        .nav-links a {
+            color: #17252A;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #FA0F00;
+        }
+        /* Adding hover effect for the PDFTEX logo */
+        .logo {
+            transition: transform 0.3s, color 0.3s;
+            display: inline-block;
+        }
+        .logo:hover {
+            transform: scale(1.1);
+            color: #FA0F00;
+        }
+        /* Dropdown menu styles */
+        .navbar .selected {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .navbar .selected:hover {
+            color: #FA0F00;
+        }
+        .navbar .selected .arrow {
+            display: inline-block;
+            margin-left: 5px;
+            transition: transform 0.3s ease;
+        }
+        .navbar .selected:hover .arrow {
+            transform: rotate(180deg);
+        }
+        #navbar__tools {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #ffffff;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        #navbar__tools ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #navbar__tools li {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        #navbar__tools li:last-child {
+            border-bottom: none;
+        }
+        #navbar__tools a {
+            color: #17252A;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s ease;
+        }
+        #navbar__tools a:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toolsDropdown = document.getElementById('navbar__tools');
+            const toolsButton = document.querySelector('.navbar .selected');
+            
+            toolsButton.addEventListener('mouseenter', function() {
+                toolsDropdown.style.display = 'block';
+            });
+
+            toolsButton.addEventListener('mouseleave', function(e) {
+                setTimeout(() => {
+                    if (!toolsDropdown.matches(':hover')) {
+                        toolsDropdown.style.display = 'none';
+                    }
+                }, 100);
+            });
+
+            toolsDropdown.addEventListener('mouseleave', function() {
+                toolsDropdown.style.display = 'none';
+            });
+        });
+    </script>
+
+    <div class="hero">
+        <div class="container">
+            <h1 style="font-size: 2.5em;">About PDFTEX</h1>
+            <p style="font-size: 1.25em;">Transforming the way you work with PDFs and LaTeX</p>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="container">
+            <div class="card">
+                <h2>Our Mission</h2>
+                <p>
+                    At PDFTEX, we're on a mission to simplify the process of working with PDF documents and LaTeX. Our primary goal is to make it easier for people with zero or low knowledge of LaTeX to edit, add, or use pre-made formulas and text, and integrate them into their PDF documents in an easy and, most importantly, free way.
+                    We understand that the majority of users who need these services are students, often with limited financial resources. That's why we're committed to providing a powerful, accessible alternative to expensive apps that offer similar functionality.
+                    We believe that powerful tools should be accessible to everyone, regardless of their technical background or budget constraints. Our goal is to provide a seamless, user-friendly platform that bridges the gap between PDF and LaTeX, empowering researchers, students, and professionals to focus on their content rather than formatting challenges or software costs.</p>
+            </div>
+
+            <div class="card">
+                <h2>Our Story</h2>
+                <p>The idea for PDFTEX was born from personal experience. As a math Ph.D. student, I found myself in a challenging situation while working on my master's thesis. My research focused on domain decomposition methods, a topic that was new to me and required significant time to understand, prepare codes, and prove convergence theorems.
+                    With the deadline looming and limited time remaining, I faced the daunting task of writing my thesis. My limited experience with LaTeX added another layer of complexity. I desperately needed a solution to extract LaTeX code from PDFs to incorporate into my thesis. Unfortunately, most available software options were paid services. After a few attempts, I reluctantly paid for these services to complete my work on time.
+                    This experience sparked a realization: there had to be a better, more accessible way to work with LaTeX and PDFs. That's when the idea for PDFTEX was born.</p>
+            </div>
+
+            <div class="card">
+                <h2>Meet Our Team</h2>
+                <div class="team-member">
+                    <img src="https://media.licdn.com/dms/image/v2/D4E03AQEVyjnGMSPH4A/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1696303121110?e=1733356800&v=beta&t=dLBaH0KC_WNxztzNbKrw_64IuGH1k7trx3MSs9rk2po" alt="">
+                    <div class="team-member-info">
+                        <h3>Chahid Chadi</h3>
+                        <p></p>
+                        <p>Chadi Chahid is a passionate PhD student in Applied Mathematics at Moulay Ismail University, specializing in numerical analysis and partial differential equations. His research focuses on innovative approaches to solving complex mathematical problems, particularly through the application of physics-informed neural networks (PINNs) to PDEs. With a background in mathematics, web development, and mobile app creation, </p>
+                    </div>
+                </div>
+            </div>
+
+        
+        </div>
+    </div>
+</body>
+<!-- Start Generation Here -->
+<footer style="background-color: #FA0F00; color: #FEFFFF; text-align: center; padding: 20px; ">
+    <p style="margin: 0;">&copy; 2024 PDFTEX. All rights reserved.</p>
+</footer>
+<!-- End Generation Here -->
+</html>

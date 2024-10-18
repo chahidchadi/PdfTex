@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <style>
+
+        /* Adding hover effect for the PDFTEX logo */
+        .logo {
+            transition: transform 0.3s, color 0.3s;
+            display: inline-block;
+        }
+
+        .logo:hover {
+            transform: scale(1.1);
+            color: #FA0F00; /* Change the color on hover */
+        }
+#resultSection {
+    background-color: #FEFFFF;
+    border: none;
+    border-radius: 5px;
+    min-height: 150px;
+    padding: 20px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Uniform shadow on all sides */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+        #result {
+            background-color: #FEFFFF;
+            border: 1px solid #d4d4d4;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 5px;
+        }
+        #showResultsBtn {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        #showResultsBtn:hover {
+    background-color: #FA0F00;
+}
+
+.copy-btn {
+    background-color: #FA0F00;
+    color: #FEFFFF;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    position: absolute; /* Make it absolute */
+    left: 0; /* Position it in the left corner */
+    top: 0; /* Adjust as needed to place it at the top */
+}
+
+.copy-btn:hover {
+    background-color: #FA0F00;
+}
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toolsDropdown = document.getElementById('navbar__tools');
+            const toolsButton = document.querySelector('.navbar .selected');
+            
+            toolsButton.addEventListener('mouseenter', function() {
+                toolsDropdown.style.display = 'block';
+            });
+
+            toolsButton.addEventListener('mouseleave', function(e) {
+                setTimeout(() => {
+                    if (!toolsDropdown.matches(':hover')) {
+                        toolsDropdown.style.display = 'none';
+                    }
+                }, 100);
+            });
+
+            toolsDropdown.addEventListener('mouseleave', function() {
+                toolsDropdown.style.display = 'none';
+            });
+
+            // Initialize Dropzone
+            Dropzone.autoDiscover = false;
+            new Dropzone("#uploadForm", {
+                url: "/upload_pdf",
+                acceptedFiles: ".pdf",
+                maxFilesize: 10, // MB
+                createImageThumbnails: false,
+                dictDefaultMessage: "Drag & Drop your PDF here or Click to Upload",
+                init: function() {
+                    this.on("success", function(file, response) {
+                        convertedFilename = response.filename;
+                        displayThumbnails(response.thumbnails);
+                        pageSelection.style.display = 'block';
+                    });
+                    this.on("error", function(file, errorMessage) {
+                        alert('An error occurred during upload: ' + errorMessage);
+                    });
+                }
+            });
+
+            function displayThumbnails(thumbnails) {
+                const pageThumbnails = document.getElementById('pageThumbnails');
+                pageThumbnails.innerHTML = '';
+                thumbnails.forEach((thumbnail, index) => {
+                    const thumbnailContainer = document.createElement('div');
+                    thumbnailContainer.classList.add('thumbnail-container');
+
+                    const img = document.createElement('img');
+                    img.src = `data:image/png;base64,${thumbnail}`;
+                    img.alt = `Page ${index + 1}`;
+                    img.classList.add('thumbnail');
+
+                    const pageNumber = document.createElement('p');
+                    pageNumber.textContent = `Page ${index + 1}`;
+                    pageNumber.classList.add('page-number');
+
+                    thumbnailContainer.appendChild(img);
+                    thumbnailContainer.appendChild(pageNumber);
+                    thumbnailContainer.addEventListener('click', () => selectThumbnail(thumbnailContainer, index + 1));
+                    pageThumbnails.appendChild(thumbnailContainer);
+                });
+            }
+
+            let selectedThumbnail = null;
+
+            function selectThumbnail(container, pageNum) {
+                if (selectedThumbnail) {
+                    selectedThumbnail.classList.remove('selected');
+                }
+                selectedThumbnail = container;
+                selectedThumbnail.classList.add('selected');
+                document.getElementById('convertBtn').disabled = false;
+            }
+        });
+    </script>
+    <style>
+        .navbar {
+            position: relative;
+        }
+        .navbar .selected {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .navbar .selected:hover {
+            color: #FA0F00;;
+        }
+        .navbar .selected .arrow {
+            display: inline-block;
+            margin-left: 5px;
+            transition: transform 0.3s ease;
+        }
+        .navbar .selected:hover .arrow {
+            transform: rotate(180deg);
+        }
+        #navbar__tools {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #ffffff;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        #navbar__tools ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        #navbar__tools li {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        #navbar__tools li:last-child {
+            border-bottom: none;
+        }
+        #navbar__tools a {
+            color: #17252A;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s ease;
+        }
+        #navbar__tools a:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-links {
+    margin-left: 20px;
+    display: flex;
+    gap: 40px; /* Adjust this for spacing between links */
+}
+
+
+.nav-links a {
+    color: #17252A; /* Change this for the desired color */
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.nav-links a:hover {
+    color: #FA0F00; /* Hover color */
+}
+        .dropzone {
+            border: 2px dashed #FA0F00;
+            border-radius: 5px;
+            background: white;
+            min-height: 150px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Uniform shadow on all sides */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dropzone:hover {
+            background: #f9f9f9;
+        }
+        .dropzone .dz-message {
+            font-weight: 400;
+            text-align: center;
+            margin: 2em 0;
+        }
+        .dropzone .dz-preview {
+            margin: 10px;
+        }
+        #pageThumbnails {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .thumbnail-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .thumbnail {
+            width: 120px;
+            height: 160px;
+            object-fit: cover;
+            border: 3px solid transparent;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .thumbnail-container:hover .thumbnail {
+            transform: scale(1.6);
+        }
+        .thumbnail-container.selected .thumbnail {
+            border-color: #FA0F00;
+            box-shadow: 0 0 10px #FA0F00;
+        }
+        .page-number {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #17252A;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to LaTeX Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #17252A;
+            background-color: #FEFFFF;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #topbar {
+            background-color: #FEFFFF;
+            display: flex;
+            align-items: center;
+            height: 65px;
+            padding: 0 30px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 8px 20px rgba(226,226,226,.6);
+        }
+        .title a {
+            display: inline-flex;
+            align-items: center;
+            font-size: 28px;
+            color: #17252A;
+            text-decoration: none;
+        }
+        .title .logo {
+            font-size: 38px;
+            margin-right: 10px;
+        }
+        .navbar {
+            margin-left: 30px;
+        }
+        .navbar .selected {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px 15px;
+            color: #17252A;
+            cursor: pointer;
+        }
+        .navbar .menu {
+            position: absolute;
+            background-color: #FEFFFF;
+            display: none;
+            overflow: auto;
+            box-shadow: 0 8px 10px rgba(226,226,226,.6);
+            border-radius: 0 0 4px 4px;
+        }
+        .corner {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+        .corner .action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            color: #666;
+            box-sizing: border-box;
+            height: 32px;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .corner .action.donate {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+        }
+        .corner .action:hover {
+            transform: scale(1.1);        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #FEFFFF;
+        }
+        .card {
+            background-color: #FEFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        button {
+            background-color: #FA0F00;
+            color: #FEFFFF;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #FA0F00;
+        }
+        button:disabled {
+            background-color: #FEFFFF;
+            cursor: not-allowed;
+        }
+        .processing-indicator {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid #FEFFFF;
+            border-top: 4px solid #FA0F00;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Modal is hidden by default */
+.modal {
+    display: none; 
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 500px;
+    text-align: center;
+    border-radius: 10px;
+}
+#uploadForm {
+    background-color: #f8f9fa;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+#uploadForm:hover {
+    background-color: #ed676a;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+#uploadForm h2 {s
+    color: #17252A;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.file-upload-label {
+    display: inline-block;
+    padding: 12px 20px;
+    background-color: #FA0F00;
+    color: #FEFFFF;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.file-upload-label:hover {
+    background-color: #17252A;
+}
+
+#pdfFile {
+    display: none;
+}
+
+#uploadBtn {
+    background-color: #17252A;
+    color: #FEFFFF;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    margin-top: 15px;
+}
+
+#uploadBtn:hover {
+    background-color: #FA0F00;
+}
+
+#uploadBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+    </style>
+</head>
+
+
+
+<body>
+    <div id="topbar">
+        <div class="title">
+            <a href="/" title="PdfTex — PDF to LaTeX Converter">
+                <img src="https://i.ibb.co/9hXPfWv/logo.png"  class="logo" style="height: 50px; margin-right: 20px;">
+                
+            </a>
+        </div>
+
+        <div class="navbar">
+            <div class="selected" data-dropdown="navbar__tools">
+                <div class="name">Tools</div>
+                <div class="arrow">▼</div>
+            </div>
+
+            <div id="navbar__tools" class="menu">
+                <ul>
+                    <li><a href="/">Convert PDF to LaTeX</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="about.html">About Us</a>
+            <a href="contact.html">Contact Us</a>
+        </div>
+        <div class="corner">
+            <a href="/donate.html" class="action donate">
+                <span>Donate</span>
+            </a>
+        </div>
+    </div>
+    <div style="background-color: #FA0F00; color: #17252A; text-align: center; padding: 40px;">
+
+        <h1 style="font-size: 2.5em;">PDF Converter to Latex</h1>
+        <p style="font-size: 1.25em;">Convert your PDF books, articles, and reports to LaTeX code online and for free.</p>
+    </div>
+    
+    <div class="container">
+        <div style=" color: #17252A; text-align: center; padding: 40px;" class="card" id="uploadForm">
+            <h2 style="color: #17252A;">Upload Your PDF</h2>
+            <label for="pdfFile" class="file-upload-label">Choose PDF File</label>
+            <input type="file" id="pdfFile" accept=".pdf">
+            <button id="uploadBtn">Upload PDF</button>
+            <div class="processing-indicator" id="processingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <p style="color: #17252A;">Processing your PDF. Please wait...</p>
+            </div>
+        </div>
+
+        <div class="card" id="pageSelection" style="display: none;">
+            <h2 style="color: #17252A;" >Select a Page to Convert</h2>
+            <div id="pageThumbnails"></div>
+            <button style="color: #17252A;" id="convertBtn" disabled>Convert to LaTeX</button>
+            <div class="processing-indicator" id="convertProcessingIndicator" style="display: none;">
+                <div class="spinner"></div>
+                <p style="color: #17252A;" >Converting to LaTeX. Please wait...</p>
+            </div>
+        </div>
+        
+        <div class="card" id="resultSection" style="display: none;">
+            <h2 style="color: #17252A;" >Conversion Result</h2>
+            <button style="color: #17252A;" id="showResultsBtn">Show LaTeX Code</button>
+            <div id="result"></div>
+
+        </div>
+    </div>
+    <div id="popupModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #17252A;">Your page is converted </h2>
+            <p style="color: #17252A;">Press the show Latex code button to get the results:</p>
+            <button class="close-btn">Close</button>
+        </div>
+    </div>
+    
+  <script>
+        const modal = document.getElementById('popupModal');
+        const closeBtnFooter = document.querySelector('.close-btn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const showResultsBtn = document.getElementById('showResultsBtn');
+        const pageSelection = document.getElementById('pageSelection');
+        const pageThumbnails = document.getElementById('pageThumbnails');
+        const resultSection = document.getElementById('resultSection');
+        const result = document.getElementById('result');
+        const processingIndicator = document.getElementById('processingIndicator');
+        const convertProcessingIndicator = document.getElementById('convertProcessingIndicator');
+        let convertedFilename = '';
+        let selectedThumbnail = null;
+
+        uploadBtn.addEventListener('click', async () => {
+            const fileInput = document.getElementById('pdfFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a PDF file first.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('pdf', file);
+
+            try {
+                // Show processing indicator
+                processingIndicator.style.display = 'block';
+                uploadBtn.disabled = true;
+
+                const response = await axios.post('/upload_pdf', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                convertedFilename = response.data.filename;
+                displayThumbnails(response.data.thumbnails);
+                pageSelection.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred during upload.');
+            } finally {
+                // Hide processing indicator
+                processingIndicator.style.display = 'none';
+                uploadBtn.disabled = false;
+            }
+        });
+
+        function displayThumbnails(thumbnails) {
+          pageThumbnails.innerHTML = '';
+          thumbnails.forEach((thumbnail, index) => {
+           const thumbnailContainer = document.createElement('div');
+           thumbnailContainer.classList.add('thumbnail-container');
+
+           const img = document.createElement('img');
+           img.src = `data:image/png;base64,${thumbnail}`;
+           img.alt = `Page ${index + 1}`;
+           img.classList.add('thumbnail');
+           img.addEventListener('click', () => selectThumbnail(thumbnailContainer, index + 1));
+
+           const pageNumber = document.createElement('p');
+           pageNumber.textContent = `Page ${index + 1}`;
+           pageNumber.classList.add('page-number');
+
+           thumbnailContainer.appendChild(img);
+           thumbnailContainer.appendChild(pageNumber);
+           pageThumbnails.appendChild(thumbnailContainer);
+           });
+        }
+        function selectThumbnail(container, pageNum) {
+            if (selectedThumbnail) {
+                selectedThumbnail.classList.remove('selected');
+            }
+            selectedThumbnail = container;
+            selectedThumbnail.classList.add('selected');
+            convertBtn.disabled = false;
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedThumbnail) {
+                alert('Please select a page to convert.');
+                return;
+            }
+            const pageNumber = Array.from(pageThumbnails.children).indexOf(selectedThumbnail) + 1;
+
+            try {
+                convertProcessingIndicator.style.display = 'block';
+                convertBtn.disabled = true;
+
+                const response = await axios.post('/process_pdf', {
+                    filename: convertedFilename,
+                    page_number: pageNumber
+                });
+                resultSection.style.display = 'block';
+                modal.style.display = 'block';  // Show the modal
+                closeBtnFooter.addEventListener('click', function() {
+                modal.style.display = 'none';  
+                });
+                window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                modal.style.display = 'none';
+                }
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred during conversion.');
+                
+            } finally {
+                convertProcessingIndicator.style.display = 'none';
+                convertBtn.disabled = false;
+            }
+        });
+
+        showResultsBtn.addEventListener('click', async () => {
+            if (!convertedFilename) {
+                alert('Please convert a PDF file first.');
+                return;
+            }
+            try {
+                const response = await axios.get(`/get_results/${convertedFilename}`);
+                result.textContent = response.data;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while fetching results.');
+            }
+        });
+    </script>
+</body>
+<!-- Start Generation Here -->
+<footer style="background-color: #FA0F00; color: #FEFFFF; text-align: center; padding: 20px; ">
+    <p style="margin: 0;">&copy; 2024 PDFTEX. All rights reserved.</p>
+</footer>
+<!-- End Generation Here -->
+
+</html>
