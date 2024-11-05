@@ -1,6 +1,2 @@
-punkt
-wordnet
-stopwords
-averaged_perceptron_tagger
 abc
 alpino
