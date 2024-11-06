@@ -1,7 +1,1 @@
-tests/
-docs/
-local_nougat_processor/
-*.csv
-*.md
-*.pdf
-*.safetensors
+
