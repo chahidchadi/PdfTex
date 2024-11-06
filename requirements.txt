@@ -7,8 +7,6 @@ PyMuPDF==1.23.8
 python-Levenshtein==0.23.0
 huggingface-hub==0.20.1
 gunicorn==21.2.0
-ls -R
-du -h --max-depth=1
 
 
 
