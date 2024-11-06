@@ -14,8 +14,8 @@ import base64
 from PIL import Image
 import io
 from io import BytesIO
-#from function import final_code_generator
-#from function import models , replace_latex_notation
+from function import final_code_generator
+from function import models , replace_latex_notation
 
 app = Flask(__name__)
 app.debug = True  # Enable debug mode for more detailed error output
