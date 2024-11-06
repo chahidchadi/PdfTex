@@ -3,9 +3,9 @@ from werkzeug.utils import secure_filename
 import os
 from PIL import Image
 import Pdf_Sliser
-import Torch_Main
+#import Torch_Main
 #from transformers import AutoProcessor, VisionEncoderDecoderModel
-#from pathlib import Path
+from pathlib import Path
 #import PyPDF2
 #import base64
 #from PIL import Image
