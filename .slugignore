@@ -1,0 +1,5 @@
+tests/
+docs/
+*.csv
+*.md
+*.pdf
