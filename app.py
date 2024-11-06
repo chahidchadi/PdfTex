@@ -18,6 +18,11 @@ from function import models , replace_latex_notation
 
 app = Flask(__name__)
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 
 @app.route('/')
