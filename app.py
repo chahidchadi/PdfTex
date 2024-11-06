@@ -18,6 +18,7 @@ from io import BytesIO
 #from function import models , replace_latex_notation
 
 app = Flask(__name__)
+app.debug = True  # Enable debug mode for more detailed error output
 
 @app.route('/')
 def index():
@@ -25,3 +26,4 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
