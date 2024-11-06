@@ -1,5 +1,5 @@
 -f https://download.pytorch.org/whl/torch_stable.html
-torch==1.8.1+cpu
+torch==2.4.0+cpu
 Flask==3.0.0
 Werkzeug==3.0.1
 Pillow==10.1.0
