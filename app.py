@@ -4,10 +4,10 @@ import os
 from PIL import Image
 import Pdf_Sliser
 from transformers import StoppingCriteria, StoppingCriteriaList
-#from collections import defaultdict
+from collections import defaultdict
 import torch
 #import Torch_Main
-#from transformers import AutoProcessor, VisionEncoderDecoderModel
+from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
 import PyPDF2
 import base64
