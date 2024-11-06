@@ -9,8 +9,8 @@ from pathlib import Path
 import PyPDF2
 import base64
 from PIL import Image
-#import io
-#from io import BytesIO
+import io
+from io import BytesIO
 #from function import final_code_generator
 #from function import models , replace_latex_notation
 
