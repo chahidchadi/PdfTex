@@ -4,7 +4,6 @@ import os
 from PIL import Image
 import Pdf_Sliser
 import Torch_Main
-import torch
 from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
 import PyPDF2
