@@ -7,7 +7,7 @@ import Pdf_Sliser
 #from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
 import PyPDF2
-#import base64
+import base64
 #from PIL import Image
 #import io
 #from io import BytesIO
