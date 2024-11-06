@@ -8,7 +8,7 @@ import Pdf_Sliser
 from pathlib import Path
 import PyPDF2
 import base64
-#from PIL import Image
+from PIL import Image
 #import io
 #from io import BytesIO
 #from function import final_code_generator
