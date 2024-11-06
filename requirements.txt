@@ -1,5 +1,6 @@
 -f https://download.pytorch.org/whl/torch/
 torch==2.4.0+cpu
+transformers==4.43.4
 Flask==3.0.0
 Werkzeug==3.0.1
 Pillow==10.1.0
