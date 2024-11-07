@@ -14,23 +14,21 @@ import io
 from io import BytesIO
 from function import final_code_generator
 from function import models , replace_latex_notation
-from transformers import AutoProcessor, VisionEncoderDecoderModel
-from pathlib import Path
-import re
+# Load model directly
+from transformers import AutoTokenizer
 
-local_model_path = Path("./local_model_path")
-local_processor_path = Path("./local_nougat_processor")
-model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-small")
-model.save_pretrained(local_model_path)
-processor = AutoProcessor.from_pretrained("facebook/nougat-small")
-processor.save_pretrained(local_processor_path)
-    
+# Use a pipeline as a high-level helper
+from transformers import pipeline
+
+
 app = Flask(__name__)
-   
 #model = VisionEncoderDecoderModel.from_pretrained("./local_nougat_model")
-#processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+pipe = pipeline("image-to-text", model="facebook/nougat-base")
+processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+tokenizer = AutoTokenizer.from_pretrained("facebook/nougat-base")
+model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-base")
 device = "cuda" if torch.cuda.is_available() else "cpu"
-#model.to(device)
+model.to(device)
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -73,7 +71,15 @@ def pdf_to_latex(filepath, page_number):
 
     image = Image.open(images[page_number - 1])  # Adjust for 0-based index
     pixel_values = processor(images=image, return_tensors="pt").pixel_values
- 
+    outputs = model.generate(
+        pixel_values.to(device),
+        min_length=1,
+        max_length=3584,
+        bad_words_ids=[[processor.tokenizer.unk_token_id]],
+        return_dict_in_generate=True,
+        output_scores=True,
+        stopping_criteria=Torch_Main.StoppingCriteriaList([Torch_Main.StoppingCriteriaScores()]),
+    )
     generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
     generated = processor.post_process_generation(generated, fix_markdown=False)
     return generated
