@@ -23,22 +23,27 @@ from pathlib import Path
 import re
 
 def models():
- # Define local paths for saving the model and processor
- local_model_path = Path("./local_model_path")
- local_processor_path = Path("./local_nougat_processor")
-# Download and save the model
- print("Downloading and saving the model...")
- model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-small")
- model.save_pretrained(local_model_path)
-# Download and save the processor
- print("Downloading and saving the processor...")
- processor = AutoProcessor.from_pretrained("facebook/nougat-small")
- processor.save_pretrained(local_processor_path)
- print(f"Model saved to: {local_model_path}")
- print(f"Processor saved to: {local_processor_path}")
- print("Download complete.")
-return model,processor
-model,processor = models()
+    # Define local paths for saving the model and processor
+    local_model_path = Path("./local_model_path")
+    local_processor_path = Path("./local_nougat_processor")
+    
+    # Download and save the model
+    print("Downloading and saving the model...")
+    model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-small")
+    model.save_pretrained(local_model_path)
+    
+    # Download and save the processor
+    print("Downloading and saving the processor...")
+    processor = AutoProcessor.from_pretrained("facebook/nougat-small")
+    processor.save_pretrained(local_processor_path)
+    
+    print(f"Model saved to: {local_model_path}")
+    print(f"Processor saved to: {local_processor_path}")
+    print("Download complete.")
+    
+    return model, processor
+
+model, processor = models()
 #model = VisionEncoderDecoderModel.from_pretrained("./local_nougat_model")
 #processor = AutoProcessor.from_pretrained("./local_nougat_processor")
 device = "cuda" if torch.cuda.is_available() else "cpu"
