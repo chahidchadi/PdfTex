@@ -18,6 +18,8 @@ from function import models , replace_latex_notation
 
 app = Flask(__name__)
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+model = VisionEncoderDecoderModel.from_pretrained("./local_nougat_model")
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 UPLOAD_FOLDER = 'uploads'
