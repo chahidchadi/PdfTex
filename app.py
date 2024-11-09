@@ -9,26 +9,37 @@ from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
 import PyPDF2
 import base64
-from PIL import Image
-import io
 from io import BytesIO
-from function import final_code_generator
-from function import models , replace_latex_notation
-# Load model directly
-from transformers import AutoTokenizer
+from function import final_code_generator, replace_latex_notation
+from transformers import AutoTokenizer, NougatProcessor
+import sys
 
-# Use a pipeline as a high-level helper
-from transformers import pipeline
-from transformers import NougatProcessor
-from transformers import VisionEncoderDecoderModel, AutoProcessor
-import torch
+# Configuration
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-
-
+# Flask app initialization
 app = Flask(__name__)
-model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Model and Processor loading with error handling
+def load_model_and_processor():
+    try:
+        model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
+        processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+        return model, processor
+    except Exception as e:
+        print(f"Error loading model or processor: {e}", file=sys.stderr)
+        return None, None
+
+model, processor = load_model_and_processor()
+
+if model is None or processor is None:
+    raise RuntimeError("Failed to load model or processor. Please check model files and paths.")
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
 
 @app.route('/')
 def index():
