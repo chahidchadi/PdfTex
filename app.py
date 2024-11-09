@@ -28,7 +28,7 @@ import torch
 app = Flask(__name__)
 model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
-device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 @app.route('/')
 def index():
