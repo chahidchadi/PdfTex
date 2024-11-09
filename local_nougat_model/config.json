@@ -185,5 +185,5 @@
   "model_type": "vision-encoder-decoder",
   "tie_word_embeddings": false,
   "torch_dtype": "float32",
-  "transformers_version": "4.43.4"
+  "transformers_version": "4.44.2"
 }
