@@ -35,7 +35,7 @@ def models():
  print(f"Processor saved to: {local_processor_path}")
  print("Download complete.")
  return model , processor
-
+model , processor = models()
 app = Flask(__name__)
 
 
