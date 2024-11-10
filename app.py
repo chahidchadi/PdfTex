@@ -56,8 +56,8 @@ def pdf_to_latex(filepath, page_number):
     with Image.open(images[page_number - 1]) as image:  # Use context manager for memory management
         pixel_values = processor(images=image, return_tensors="pt").pixel_values
         model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model.to(device)
+        model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        model.half()
         outputs = model.generate(
             pixel_values.to(device),
             min_length=1,
