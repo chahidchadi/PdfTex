@@ -22,9 +22,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 conversion_results = {}
 
 # Load model globally to avoid reloading multiple times
-model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model.to(device)
+
 
 def count_pdf_pages(file_path):
     try:
@@ -57,6 +55,9 @@ def pdf_to_latex(filepath, page_number):
 
     with Image.open(images[page_number - 1]) as image:  # Use context manager for memory management
         pixel_values = processor(images=image, return_tensors="pt").pixel_values
+        model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        model.to(device)
         outputs = model.generate(
             pixel_values.to(device),
             min_length=1,
