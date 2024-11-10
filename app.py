@@ -26,6 +26,7 @@ import torch
 
 
 app = Flask(__name__)
+model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
@@ -69,9 +70,6 @@ def pdf_to_latex(filepath, page_number):
 
     image = Image.open(images[page_number - 1])  # Adjust for 0-based index
     pixel_values = processor(images=image, return_tensors="pt").pixel_values
-    model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
     outputs = model.generate(
         pixel_values.to(device),
         min_length=1,
