@@ -51,13 +51,14 @@ def generate_thumbnails(filepath):
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     thumbnails = []
     for img in images:
-        img = Image.open(img)
-        img.thumbnail((100, 100))  # Resize to thumbnail
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        thumbnails.append(img_str)
+        with Image.open(img) as img:  # Use a context manager to release memory immediately
+            img.thumbnail((100, 100))  # Resize to thumbnail
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+            thumbnails.append(img_str)
     return thumbnails
+
 
 def pdf_to_latex(filepath, page_number):
 
