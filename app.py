@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template
 from werkzeug.utils import secure_filename
 import os
 from PIL import Image
@@ -9,20 +9,35 @@ from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
 import PyPDF2
 import base64
+from PIL import Image
+import io
 from io import BytesIO
-from function import final_code_generator, models, replace_latex_notation
-import gc  # Added garbage collection for memory management
+from function import final_code_generator
+from function import models , replace_latex_notation
+# Load model directly
+from transformers import AutoTokenizer
+
+# Use a pipeline as a high-level helper
+from transformers import pipeline
+from transformers import NougatProcessor
+from transformers import VisionEncoderDecoderModel, AutoProcessor
+import torch
+
+
 
 app = Flask(__name__)
+model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
 UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensures folder is created if not exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
 conversion_results = {}
-
-# Load model globally to avoid reloading multiple times
-
 
 def count_pdf_pages(file_path):
     try:
@@ -30,51 +45,46 @@ def count_pdf_pages(file_path):
             pdf_reader = PyPDF2.PdfReader(file)
             num_pages = len(pdf_reader.pages)
         return num_pages
-    except (FileNotFoundError, PyPDF2.errors.PdfReadError) as e:
-        return f"Error: {str(e)}"
+    except FileNotFoundError:
+        return "Error: File not found."
+    except PyPDF2.errors.PdfReadError:
+        return "Error: Invalid PDF file."
 
 def generate_thumbnails(filepath):
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     thumbnails = []
     for img in images:
-        with Image.open(img) as image:  # Use context manager to release memory after processing
-            image.thumbnail((100, 100))  # Resize to thumbnail
-            buffered = BytesIO()
-            image.save(buffered, format="PNG")
-            img_str = base64.b64encode(buffered.getvalue()).decode()
-            thumbnails.append(img_str)
-    # Explicit garbage collection
-    del images
-    gc.collect()
+        img = Image.open(img)
+        img.thumbnail((100, 100))  # Resize to thumbnail
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        thumbnails.append(img_str)
     return thumbnails
 
 def pdf_to_latex(filepath, page_number):
+
+
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
+
     if page_number < 1 or page_number > len(images):
         raise ValueError(f"Invalid page number. The PDF has {len(images)} pages.")
 
-    with Image.open(images[page_number - 1]) as image:  # Use context manager for memory management
-        pixel_values = processor(images=image, return_tensors="pt").pixel_values
-        model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-        model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        model.half()
-        outputs = model.generate(
-            pixel_values.to(device),
-            min_length=1,
-            max_length=3584,
-            bad_words_ids=[[processor.tokenizer.unk_token_id]],
-            return_dict_in_generate=True,
-            output_scores=True,
-            stopping_criteria=Torch_Main.StoppingCriteriaList([Torch_Main.StoppingCriteriaScores()]),
-        )
+    image = Image.open(images[page_number - 1])  # Adjust for 0-based index
+    pixel_values = processor(images=image, return_tensors="pt").pixel_values
+    outputs = model.generate(
+        pixel_values.to(device),
+        min_length=1,
+        max_length=3584,
+        bad_words_ids=[[processor.tokenizer.unk_token_id]],
+        return_dict_in_generate=True,
+        output_scores=True,
+        stopping_criteria=Torch_Main.StoppingCriteriaList([Torch_Main.StoppingCriteriaScores()]),
+    )
     generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
     generated = processor.post_process_generation(generated, fix_markdown=False)
-    
-    # Explicit memory cleanup
-    del pixel_values, outputs, images
-    gc.collect()
-    
     return generated
+
 
 @app.route('/')
 def index():
@@ -86,6 +96,7 @@ def upload_pdf():
         return jsonify({'error': 'No PDF file uploaded'}), 400
 
     file = request.files['pdf']
+
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
@@ -106,10 +117,6 @@ def upload_pdf():
         except Exception as e:
             print(f"Error processing PDF: {str(e)}")
             return jsonify({'error': str(e)}), 500
-        finally:
-            # Clean up uploaded files to avoid accumulation
-            if os.path.exists(filepath):
-                os.remove(filepath)
     else:
         return jsonify({'error': 'Invalid file type. Please upload a PDF.'}), 400
 
@@ -122,27 +129,26 @@ def process_pdf():
         return jsonify({'error': 'Missing filename or page number'}), 400
 
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
     if not os.path.exists(filepath):
         return jsonify({'error': 'File not found'}), 404
 
     try:
         latex_output = pdf_to_latex(filepath, page_number)
+        # Assuming final_code_generator is defined elsewhere
         latex_output = final_code_generator(latex_output)
         latex_output = rf"{latex_output}"
         latex_output = replace_latex_notation(latex_output)
 
         # Store results in memory
         conversion_results[filename] = latex_output
+
         return jsonify({'message': 'Conversion complete', 'filename': filename})
     except ValueError as ve:
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         print(f"Error processing PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
-    finally:
-        # Clean up to free memory
-        if os.path.exists(filepath):
-            os.remove(filepath)
 
 @app.route('/get_results/<filename>', methods=['GET'])
 def get_results(filename):
@@ -150,18 +156,16 @@ def get_results(filename):
         return jsonify(conversion_results[filename])
     else:
         return jsonify({'error': 'Results not found'}), 404
-
 @app.route('/about.html')
 def about():
-    return send_file('about.html')
-
+    return send_file('about.html')  
 @app.route('/contact.html')
 def contact():
-    return send_file('contact.html')
-
+    return send_file('contact.html')  
 @app.route('/donate.html')
 def donate():
-    return send_file('donate.html')
+    return send_file('donate.html')  
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
