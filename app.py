@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 from PIL import Image
 import Pdf_Sliser
+import Torch_Main
 import torch
 from transformers import AutoProcessor, VisionEncoderDecoderModel
 from pathlib import Path
@@ -10,24 +11,22 @@ import PyPDF2
 import base64
 from io import BytesIO
 from function import final_code_generator, models, replace_latex_notation
-import gc  # For memory cleanup
+import gc  # Added garbage collection for memory management
 
-# Initialize the Flask app
 app = Flask(__name__)
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Load models and processor globally to avoid reloading
 processor = AutoProcessor.from_pretrained("./local_nougat_processor")
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # Ensures folder is created if not exists
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+conversion_results = {}
+
+# Load model globally to avoid reloading multiple times
 model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
-conversion_results = {}  # Store conversion results temporarily
-
 def count_pdf_pages(file_path):
-    """Count the number of pages in a PDF file."""
     try:
         with open(file_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
@@ -37,29 +36,29 @@ def count_pdf_pages(file_path):
         return f"Error: {str(e)}"
 
 def generate_thumbnails(filepath):
-    """Generate thumbnails for each page in a PDF to reduce memory usage."""
+    images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     thumbnails = []
-    for img_path in Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True):
-        with Image.open(img_path) as img:
-            img.thumbnail((100, 100))  # Resize to thumbnail
+    for img in images:
+        with Image.open(img) as image:  # Use context manager to release memory after processing
+            image.thumbnail((100, 100))  # Resize to thumbnail
             buffered = BytesIO()
-            img.save(buffered, format="PNG")
+            image.save(buffered, format="PNG")
             img_str = base64.b64encode(buffered.getvalue()).decode()
             thumbnails.append(img_str)
-        gc.collect()  # Clear memory after each image
+    # Explicit garbage collection
+    del images
+    gc.collect()
     return thumbnails
 
 def pdf_to_latex(filepath, page_number):
-    """Convert a specific page of a PDF to LaTeX."""
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     if page_number < 1 or page_number > len(images):
         raise ValueError(f"Invalid page number. The PDF has {len(images)} pages.")
 
-    # Process the selected page
-    with Image.open(images[page_number - 1]) as image:
-        pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
+    with Image.open(images[page_number - 1]) as image:  # Use context manager for memory management
+        pixel_values = processor(images=image, return_tensors="pt").pixel_values
         outputs = model.generate(
-            pixel_values,
+            pixel_values.to(device),
             min_length=1,
             max_length=3584,
             bad_words_ids=[[processor.tokenizer.unk_token_id]],
@@ -67,10 +66,13 @@ def pdf_to_latex(filepath, page_number):
             output_scores=True,
             stopping_criteria=Torch_Main.StoppingCriteriaList([Torch_Main.StoppingCriteriaScores()]),
         )
-        generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
-        generated = processor.post_process_generation(generated, fix_markdown=False)
-        del pixel_values  # Free up memory
-        torch.cuda.empty_cache() if torch.cuda.is_available() else gc.collect()
+    generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
+    generated = processor.post_process_generation(generated, fix_markdown=False)
+    
+    # Explicit memory cleanup
+    del pixel_values, outputs, images
+    gc.collect()
+    
     return generated
 
 @app.route('/')
@@ -104,9 +106,9 @@ def upload_pdf():
             print(f"Error processing PDF: {str(e)}")
             return jsonify({'error': str(e)}), 500
         finally:
-            # Free up memory and remove large files if no longer needed
-            del file
-            gc.collect()
+            # Clean up uploaded files to avoid accumulation
+            if os.path.exists(filepath):
+                os.remove(filepath)
     else:
         return jsonify({'error': 'Invalid file type. Please upload a PDF.'}), 400
 
@@ -125,7 +127,10 @@ def process_pdf():
     try:
         latex_output = pdf_to_latex(filepath, page_number)
         latex_output = final_code_generator(latex_output)
+        latex_output = rf"{latex_output}"
         latex_output = replace_latex_notation(latex_output)
+
+        # Store results in memory
         conversion_results[filename] = latex_output
         return jsonify({'message': 'Conversion complete', 'filename': filename})
     except ValueError as ve:
@@ -134,7 +139,9 @@ def process_pdf():
         print(f"Error processing PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
     finally:
-        gc.collect()  # Clean up memory
+        # Clean up to free memory
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
 @app.route('/get_results/<filename>', methods=['GET'])
 def get_results(filename):
