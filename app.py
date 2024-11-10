@@ -26,7 +26,7 @@ import torch
 
 
 app = Flask(__name__)
-
+processor = AutoProcessor.from_pretrained("./local_nougat_processor")
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
