@@ -1,15 +1,23 @@
-from flask import Flask, jsonify
-from transformers import VisionEncoderDecoderModel, AutoProcessor
+from flask import Flask, send_file
+import os
 
 app = Flask(__name__)
 
 @app.route('/')
-def load_model():
-    try:
-        model = VisionEncoderDecoderModel.from_pretrained("./half_precision_model")
-        return jsonify({"message": "The model is loaded successfully."})
-    except Exception as e:
-        return jsonify({"message": f"The model is not loaded. Error: {str(e)}"}), 500
+def index():
+    return send_file('index.html')
+
+@app.route('/about.html')
+def about():
+    return send_file('about.html')
+
+@app.route('/contact.html')
+def contact():
+    return send_file('contact.html')
+
+@app.route('/donate.html')
+def donate():
+    return send_file('donate.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
