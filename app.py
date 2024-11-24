@@ -1,29 +1,39 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template
 from werkzeug.utils import secure_filename
 import os
+from PIL import Image
+import Pdf_Sliser
+import Torch_Main
+import torch
+from transformers import AutoProcessor, VisionEncoderDecoderModel
+from pathlib import Path
 import PyPDF2
 import base64
-import torch
 from PIL import Image
+import io
 from io import BytesIO
+from function import final_code_generator
+from function import  replace_latex_notation
+# Load model directly
+
+# Use a pipeline as a high-level helper
 from transformers import VisionEncoderDecoderModel, AutoProcessor
-import Pdf_Sliser
-from function import final_code_generator, replace_latex_notation
+import torch
+from transformers import  VisionEncoderDecoderModel
+
+
 
 app = Flask(__name__)
-# Load model online with memory-efficient settings
 model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-small")
 processor = AutoProcessor.from_pretrained("facebook/nougat-small")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
-
-# Enable memory-efficient inference
-model.eval()
-torch.set_grad_enabled(False)
-
 UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 conversion_results = {}
 
@@ -31,16 +41,19 @@ def count_pdf_pages(file_path):
     try:
         with open(file_path, 'rb') as file:
             pdf_reader = PyPDF2.PdfReader(file)
-            return len(pdf_reader.pages)
-    except Exception as e:
-        return f"Error: {str(e)}"
+            num_pages = len(pdf_reader.pages)
+        return num_pages
+    except FileNotFoundError:
+        return "Error: File not found."
+    except PyPDF2.errors.PdfReadError:
+        return "Error: Invalid PDF file."
 
 def generate_thumbnails(filepath):
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     thumbnails = []
     for img in images:
         img = Image.open(img)
-        img.thumbnail((100, 100))
+        img.thumbnail((100, 100))  # Resize to thumbnail
         buffered = BytesIO()
         img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode()
@@ -48,26 +61,29 @@ def generate_thumbnails(filepath):
     return thumbnails
 
 def pdf_to_latex(filepath, page_number):
+
+
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
 
     if page_number < 1 or page_number > len(images):
         raise ValueError(f"Invalid page number. The PDF has {len(images)} pages.")
 
-    image = Image.open(images[page_number - 1])
-    pixel_values = processor(images=image, return_tensors="pt").pixel_values.to(device)
-    
-    # Memory-efficient generation
+    image = Image.open(images[page_number - 1])  # Adjust for 0-based index
+    pixel_values = processor(images=image, return_tensors="pt").pixel_values
     outputs = model.generate(
-        pixel_values,
+        pixel_values.to(device),
         min_length=1,
         max_length=3584,
-        num_beams=4,  # Reduced beam search for efficiency
-        early_stopping=True,
+        bad_words_ids=[[processor.tokenizer.unk_token_id]],
+        return_dict_in_generate=True,
+        output_scores=True,
+        stopping_criteria=Torch_Main.StoppingCriteriaList([Torch_Main.StoppingCriteriaScores()]),
     )
-    
-    generated = processor.batch_decode(outputs, skip_special_tokens=True)[0]
+    generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
     generated = processor.post_process_generation(generated, fix_markdown=False)
     return generated
+
+
 @app.route('/')
 def index():
     return send_file('index.html')
