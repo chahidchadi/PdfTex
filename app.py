@@ -13,28 +13,19 @@ from PIL import Image
 import io
 from io import BytesIO
 from function import final_code_generator
-from function import  replace_latex_notation
-# Load model directly
-
-# Use a pipeline as a high-level helper
-from transformers import VisionEncoderDecoderModel, AutoProcessor
-import torch
-from transformers import  VisionEncoderDecoderModel
-
-
+from function import replace_latex_notation
 
 app = Flask(__name__)
 model = VisionEncoderDecoderModel.from_pretrained("facebook/nougat-small")
 processor = AutoProcessor.from_pretrained("facebook/nougat-small")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
+
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-
 conversion_results = {}
 
 def count_pdf_pages(file_path):
@@ -51,24 +42,24 @@ def count_pdf_pages(file_path):
 def generate_thumbnails(filepath):
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
     thumbnails = []
-    for img in images:
-        img = Image.open(img)
-        img.thumbnail((100, 100))  # Resize to thumbnail
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        thumbnails.append(img_str)
+    # Only generate thumbnail for the first page
+    img = Image.open(images[0])
+    img.thumbnail((100, 100))  # Resize to thumbnail
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    thumbnails.append(img_str)
     return thumbnails
 
-def pdf_to_latex(filepath, page_number):
-
-
+def pdf_to_latex(filepath):
+    # Always process the first page
     images = Pdf_Sliser.rasterize_paper(pdf=filepath, return_pil=True)
-
-    if page_number < 1 or page_number > len(images):
-        raise ValueError(f"Invalid page number. The PDF has {len(images)} pages.")
-
-    image = Image.open(images[page_number - 1])  # Adjust for 0-based index
+    
+    # Ensure at least one page exists
+    if not images:
+        raise ValueError("No pages found in the PDF.")
+    
+    image = Image.open(images[0])  # Open first page
     pixel_values = processor(images=image, return_tensors="pt").pixel_values
     outputs = model.generate(
         pixel_values.to(device),
@@ -82,7 +73,6 @@ def pdf_to_latex(filepath, page_number):
     generated = processor.batch_decode(outputs[0], skip_special_tokens=True)[0]
     generated = processor.post_process_generation(generated, fix_markdown=False)
     return generated
-
 
 @app.route('/')
 def index():
@@ -121,10 +111,9 @@ def upload_pdf():
 @app.route('/process_pdf', methods=['POST'])
 def process_pdf():
     filename = request.json.get('filename')
-    page_number = request.json.get('page_number')
 
-    if not filename or not page_number:
-        return jsonify({'error': 'Missing filename or page number'}), 400
+    if not filename:
+        return jsonify({'error': 'Missing filename'}), 400
 
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
@@ -132,7 +121,7 @@ def process_pdf():
         return jsonify({'error': 'File not found'}), 404
 
     try:
-        latex_output = pdf_to_latex(filepath, page_number)
+        latex_output = pdf_to_latex(filepath)
         # Assuming final_code_generator is defined elsewhere
         latex_output = final_code_generator(latex_output)
         latex_output = rf"{latex_output}"
@@ -142,8 +131,6 @@ def process_pdf():
         conversion_results[filename] = latex_output
 
         return jsonify({'message': 'Conversion complete', 'filename': filename})
-    except ValueError as ve:
-        return jsonify({'error': str(ve)}), 400
     except Exception as e:
         print(f"Error processing PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -154,16 +141,18 @@ def get_results(filename):
         return jsonify(conversion_results[filename])
     else:
         return jsonify({'error': 'Results not found'}), 404
+
 @app.route('/about.html')
 def about():
     return send_file('about.html')  
+
 @app.route('/contact.html')
 def contact():
     return send_file('contact.html')  
+
 @app.route('/donate.html')
 def donate():
     return send_file('donate.html')  
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
