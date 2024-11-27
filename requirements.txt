@@ -1,6 +1,6 @@
 -f https://download.pytorch.org/whl/torch/
 torch==2.5.1+cpu
-torchvision==0.20.1+cpu
+torchvision==0.20.1
 transformers==4.43.4
 Flask==3.0.0
 Werkzeug==3.0.1
